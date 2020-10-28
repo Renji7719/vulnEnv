@@ -5,8 +5,8 @@ class db_manager {
   private $dbh;
   public function __construct() {
       // サーバー設定
-      $login_id = 'RenTun@localhost';
-      $pass = '070719@Renji';
+      $login_id = 'ーーーーー';
+      $pass = 'ーーーーーーー';
       $dbname = 'vulnEnv';
       $host = 'localhost';
       $this->dbh = new mysqli($host, $login_id, $pass, $dbname);
@@ -70,7 +70,7 @@ class db_manager {
     try{
         $dbh = $this->dbh;
         $id = array(1,2,3,4,5,6,7,8,9,10,11);
-        $name = array("金井","柴尾","塩原","岩塚","成宮","外木","山口","横田","高田","藤田","大河原");
+        $name = array(ーーーーーーーーーーーーー);
         $year = array(4,4,4,4,4,3,3,3,2,2,2);
         $deleteSQL = "truncate table ".$table;
         $dbh->query($deleteSQL);
