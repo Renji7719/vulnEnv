@@ -5,8 +5,8 @@ class db_manager {
   private $dbh;
   public function __construct() {
       // サーバー設定
-      $login_id = 'xxxxxxxxxxxxxxxxxx';
-      $pass = 'xxxxxxxxxxxxxxxxx';
+      $login_id = 'RenTun@localhost';
+      $pass = '070719@Renji';
       $dbname = 'vulnEnv';
       $host = 'localhost';
       $this->dbh = new mysqli($host, $login_id, $pass, $dbname);
@@ -37,6 +37,20 @@ class db_manager {
         return $e->getMessage();
     }
   }
+  //データを削除する処理
+  public function delete($table,$idArray){
+     try{
+      $dbh = $this->dbh;
+      //配列で受け取ったidをforeachで繰り返してdelete処理
+      foreach($idArray as $id){
+        $deleteSQL = "DELETE FROM ".$table." WHERE id = ".$id;
+        $dbh->query($deleteSQL);
+      }
+    }catch(Exception $e){
+      var_dump($e);
+      return $e->getMessage();
+    }
+  }
   //データを挿入する処理
   public function insert($table,$name,$year){
     try{
@@ -45,7 +59,6 @@ class db_manager {
       $result = $dbh->query("SELECT * FROM memberList");
       $maxCount = (int)$result->num_rows + 1;
       $insertSQL = "INSERT INTO ".$table." values(".$maxCount.",'".$name."',".$year.")";
-      var_dump($insertSQL);
       $dbh->query($insertSQL);
     }catch(Exception $e){
       var_dump($e);
@@ -57,7 +70,7 @@ class db_manager {
     try{
         $dbh = $this->dbh;
         $id = array(1,2,3,4,5,6,7,8,9,10,11);
-        $name = array(----------------------);
+        $name = array("金井","柴尾","塩原","岩塚","成宮","外木","山口","横田","高田","藤田","大河原");
         $year = array(4,4,4,4,4,3,3,3,2,2,2);
         $deleteSQL = "truncate table ".$table;
         $dbh->query($deleteSQL);
@@ -76,24 +89,34 @@ class db_manager {
   }
 }
 
-
+//なんの処理か判定するために、buttonパラメータに格納されているものを$button変数に格納する。
+if(isset($_GET["button"])){
+  $button = $_GET["button"];
+}else{
+  $button = "button is not pushing!";
+}
 // ここにDB処理いろいろ書く
 $sql = new db_manager();
 //GETパラメータにsearch、columnがあり、searchが空欄でなければ検索処理。
 //GETパラメータに何もなければ、全て表示
-if(isset($_GET["search"])&&isset($_GET["column"])&&$_GET['search']!=""){
+if(isset($_GET["searchQuery"])&&isset($_GET["column"])&&$_GET['searchQuery']!=""&&$button=="searchMemberList"){
   //検索処理
-  $searchQuery = $_GET["search"];
+  $searchQuery = $_GET["searchQuery"];
   $searchColumn = $_GET["column"];
   if($searchColumn=="id"|$searchColumn=="year"){
     $searchQuery = (int)$searchQuery;
   }
   $rows = $sql->search("memberList",$searchColumn,$searchQuery);
-}elseif(isset($_GET['name'])&&isset($_GET['year'])){
+}elseif(isset($_GET["tableID"])&&$button=="deleteMemberList"){
+  //削除ボタンが押されたら、パラメータtableIDに格納されているidと等しいカラムを削除する。
+  var_dump(gettype($_GET["tableID"]));
+  $sql->delete("memberList",$_GET["tableID"]);
+  $rows = $sql->search("memberList","id","");
+}elseif(isset($_GET['name'])&&isset($_GET['year'])&&$button=="insertMemberList"){
   //挿入ボタンが押されたら
   $sql->insert("memberList",$_GET['name'],$_GET['year']);
   $rows = $sql->search("memberList","id","");
-}elseif(isset($_GET['remake'])&&$_GET['remake']==1){
+}elseif($button=="remakeMemberList"){
   //データベースを元に戻すボタンが押されたら
   //データをリフレッシュしてから、全表示
   $sql->remake("memberList");
@@ -138,8 +161,8 @@ if(isset($_GET["search"])&&isset($_GET["column"])&&$_GET['search']!=""){
      <option>name</option>
      <option>year</option>
    </select><br>
-   <input type="text" name="search" size="30" maxlength="20" id="search">　　
-   <button type="submit" class="btn btn-outline-dark">検索</button><br>
+   <input type="text" name="searchQuery" size="30" maxlength="20" id="searchQuery">　　
+   <button type="submit" class="btn btn-outline-dark" name="button" value="searchMemberList">検索</button><br>
    </form>
    <hr>
    <form action = memberList.php method = “get”>
@@ -156,7 +179,7 @@ if(isset($_GET["search"])&&isset($_GET["column"])&&$_GET['search']!=""){
       foreach($rows as $row){
     ?> 
     <tr> 
-	  <td><input type="checkbox" name="id" value=<?php echo $row['id']; ?>>　<?php echo $row['id']; ?></td> 
+	  <td><input type="checkbox" name="tableID[]" value=<?php echo $row['id']; ?>>　<?php echo $row['id']; ?></td> 
     <td><?php echo htmlspecialchars($row['name'],ENT_QUOTES,'UTF-8'); ?></td> 
     <td><?php echo htmlspecialchars($row['year'],ENT_QUOTES,'UTF-8'); ?></td> 
     </tr> 
@@ -167,13 +190,13 @@ if(isset($_GET["search"])&&isset($_GET["column"])&&$_GET['search']!=""){
    </table>
    <h2>メンバ削除</h2>
    削除したいメンバにチェックを入れてから削除ボタンを押してください。　　　　　　　　
-   <button type="submit" class="btn btn-outline-danger">削除</button><br><br>
+   <button type="submit" class="btn btn-outline-danger" name="button" value="deleteMemberList">削除</button><br><br>
    </form>　
    <h2>メンバ追加</h2>
    <form action = memberList.php method = “get” onsubmit="return checkNum()">
    名前と社会人歴を入力してから追加ボタンを押してください。<br>
    名前：<input type="text" name="name" size="30" maxlength="20" id="name">　　年：<input type="text" name="year" size="30" maxlength="20" id="year">　　
-   <button type="submit" class="btn btn-outline-info">追加</button><br>
+   <button type="submit" class="btn btn-outline-info" name="button" value="insertMemberList">追加</button><br>
    </form>
 
    <br>
@@ -181,7 +204,7 @@ if(isset($_GET["search"])&&isset($_GET["column"])&&$_GET['search']!=""){
    <br>
    <hr>
    <form action = memberList.php method = “get”>
-    <button type="submit" class="btn btn-outline-success" name="remake" value=1>データベースを元に戻す</button>
+    <button type="submit" class="btn btn-outline-success" name="button" value="remakeMemberList">データベースを元に戻す</button>
    </form>
    <br>
    <br>
